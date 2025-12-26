@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: sogonServer
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sogon_db
+    username: sogon_dev
+    password: sogon_pass
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true

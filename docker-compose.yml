@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  sogonDb:
+    image: ankane/pgvector:latest
+    container_name: sogonDb
+    environment:
+      POSTGRES_USER: sogon_dev
+      POSTGRES_PASSWORD: sogon_pass
+      POSTGRES_DB: sogon_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgresData:/var/lib/postgresql/data
+    restart: always
