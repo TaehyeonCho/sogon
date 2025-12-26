@@ -1,0 +1,18 @@
+# 1. DB 파일 (업로드 금지)
+postgresData/
+postgres_data
+
+# 2. Java Build 결과물(자동 생성된 파일)
+.gradle/
+build/
+out/
+bin/
+
+# 3. IDE 설정 파일(공유 X)
+.vscode/
+.idea/
+*.iml
+.DS_Store
+
+# 4. 환경 변수 (추후 API 키 숨길 때 사용)
+.env
