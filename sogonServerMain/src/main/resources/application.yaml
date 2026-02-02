@@ -4,8 +4,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/sogon_db  
-    username: sogon_dev
-    password: sogon_pass    
+    username: postgres
+    password: pass1234
     driver-class-name: org.postgresql.Driver
 
   jpa:
