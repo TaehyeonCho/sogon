@@ -97,5 +97,5 @@ async def chat_with_ai(request: ChatRequest):
     
     # 5. 서버 실행
 if __name__ == "__main__":
-    # 0.0.0.0은 외부 접속 허용, 포트 8000번 사용
-    uvicorn.run(app, host="0.0.0.0", port = 8000)
+    # 0.0.0.0은 외부 접속 허용, 포트 8001번 사용
+    uvicorn.run(app, host="0.0.0.0", port = 8001)

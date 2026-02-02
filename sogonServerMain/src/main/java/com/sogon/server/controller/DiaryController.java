@@ -1,46 +1,46 @@
 package com.sogon.server.controller;
 
-import com.sogon.server.dto.DiaryResponseDto;
 import com.sogon.server.dto.DiaryWriteDto;
+import com.sogon.server.entity.Diary;
 import com.sogon.server.service.DiaryService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid; 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 
 import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/diary")
+@RequestMapping("/api/diaries")
+@RequiredArgsConstructor
 public class DiaryController {
 
-    @Autowired
-    private DiaryService diaryService;
+    private final DiaryService diaryService;
 
-    // 1. 쓰기
+    // 1. 일기 작성
     @PostMapping
-    public String writeDiary(@Valid @RequestBody DiaryWriteDto dto, Principal principal) {
-        diaryService.writeDiary(principal.getName(), dto);
-        return "🎉 일기 저장 성공!";
+    public ResponseEntity<Diary> writeDiary(Principal principal, @RequestBody @Valid DiaryWriteDto dto) {
+        // @Valid를 붙여야 DTO의 @NotNull, @NotBlank가 작동합니다.
+        return ResponseEntity.ok(diaryService.writeDiary(principal.getName(), dto));
     }
 
-    // 2. 조회
+    // 2. 내 일기 목록 조회
     @GetMapping
-    public List<DiaryResponseDto> getMyDiaries(Principal principal) {
-        return diaryService.getMyDiaries(principal.getName());
+    public ResponseEntity<List<Diary>> getMyDiaries(Principal principal) {
+        return ResponseEntity.ok(diaryService.getMyDiaries(principal.getName()));
     }
 
-    // 3.("id") 명시하여 해결)
+    // 3. 일기 수정
     @PutMapping("/{id}")
-    public String updateDiary(@PathVariable("id") Long id, @Valid @RequestBody DiaryWriteDto dto, Principal principal) {
-        diaryService.updateDiary(id, principal.getName(), dto);
-        return "🛠️ 일기 수정 성공!";
+    public ResponseEntity<Diary> updateDiary(@PathVariable Long id, Principal principal, @RequestBody @Valid DiaryWriteDto dto) {
+        return ResponseEntity.ok(diaryService.updateDiary(id, principal.getName(), dto));
     }
 
-    // 4. ("id") 명시하여 해결)
+    // 4. 일기 삭제
     @DeleteMapping("/{id}")
-    public String deleteDiary(@PathVariable("id") Long id, Principal principal) {
+    public ResponseEntity<Void> deleteDiary(@PathVariable Long id, Principal principal) {
         diaryService.deleteDiary(id, principal.getName());
-        return "🗑️ 일기 삭제 성공!";
+        return ResponseEntity.ok().build();
     }
 }

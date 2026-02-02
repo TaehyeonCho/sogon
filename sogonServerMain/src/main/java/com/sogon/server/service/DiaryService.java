@@ -1,90 +1,105 @@
 package com.sogon.server.service;
 
-import com.sogon.server.dto.DiaryResponseDto; // 일기 응답 DTO
-import com.sogon.server.dto.DiaryWriteDto; // 일기 작성 DTO
-import com.sogon.server.entity.Diary; // 일기 엔티티
-import com.sogon.server.entity.User; // 유저 엔티티
-import com.sogon.server.repository.DiaryRepository; // 일기 리포지토리
-import com.sogon.server.repository.UserRepository; // 유저 리포지토리
-import org.springframework.beans.factory.annotation.Autowired; // 의존성 주입
-import org.springframework.stereotype.Service; // 서비스 컴포넌트
-import org.springframework.transaction.annotation.Transactional; // 트랜잭션 관리
+import com.sogon.server.dto.DiaryWriteDto;
+import com.sogon.server.entity.Diary;
+import com.sogon.server.entity.User;
+import com.sogon.server.repository.DiaryRepository;
+import com.sogon.server.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List; // 리스트
-import java.util.stream.Collectors; // 스트림 수집
+import java.util.List;
+import java.util.Map;
 
-@Service // 서비스 컴포넌트 선언
-public class DiaryService { // 일기 서비스
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class DiaryService {
 
-    @Autowired // 의존성 주입
-    private DiaryRepository diaryRepository;
+    private final DiaryRepository diaryRepository;
+    private final UserRepository userRepository;
+    private final WebClient webClient;
 
-    @Autowired // 의존성 주입
-    private UserRepository userRepository;
+    // 1. 일기 작성
+    public Diary writeDiary(String email, DiaryWriteDto dto) {
+        User user = getUser(email);
 
-    // 일기 쓰기
-    @Transactional
-    public void writeDiary(String email, DiaryWriteDto dto) { // 이메일로 유저 찾기
-        User user = userRepository.findByEmail(email) // 이메일로 유저 찾기
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
+        // Python AI에게 벡터값 요청
+        List<Double> vectorData = getEmbeddingFromAi(dto.getContent());
 
-        Diary diary = new Diary(); // 일기 엔티티 생성
-        diary.setUser(user); // 작성자 설정
-        diary.setContent(dto.getContent()); // 내용 설정
-        diary.setWrittenDate(dto.getDate()); // 날짜 설정
-        diary.setSentiment(dto.getSentiment()); // 감정 설정
+        Diary diary = Diary.builder()
+                .user(user)
+                .content(dto.getContent())
+                .diaryDate(dto.getDate())       // [반영] DTO의 날짜
+                .sentiment(dto.getSentiment())  // [반영] DTO의 감정
+                .embedding(vectorData)
+                .build();
 
-        diaryRepository.save(diary); // 일기 저장
+        return diaryRepository.save(diary);
     }
 
-    // 내 일기 목록 조회
+    // 2. 내 일기 목록 조회
     @Transactional(readOnly = true)
-    public List<DiaryResponseDto> getMyDiaries(String email) { // 이메일로 유저 찾기
-        User user = userRepository.findByEmail(email) // 이메일로 유저 찾기
-                .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다."));
-
-        // 1. DB에서 내 일기 다 가져오기
-        List<Diary> diaries = diaryRepository.findAllByUserOrderByWrittenDateDesc(user);
-
-        // 2. Entity -> DTO 변환
-        return diaries.stream().map(diary -> {
-            DiaryResponseDto dto = new DiaryResponseDto(); // 새로운 DTO 상자 만들기
-            dto.setId(diary.getDiaryId()); // 일기 번호도 담아주기
-            dto.setContent(diary.getContent()); // 내용
-            dto.setDate(diary.getWrittenDate()); // 날짜
-            dto.setSentiment(diary.getSentiment()); // 감정
-            return dto; // 상자 반환
-        }).collect(Collectors.toList()); // 상자들을 리스트로 묶어서 반환
+    public List<Diary> getMyDiaries(String email) {
+        User user = getUser(email);
+        return diaryRepository.findAllByUserOrderByCreatedAtDesc(user);
     }
-    // 일기 수정
-    @Transactional
-    public void updateDiary(Long diaryId, String email, DiaryWriteDto dto){
-        // 일기 찾기
-        Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new RuntimeException("일기를 찾을 수 없습니다."));
+
+    // 3. 일기 수정
+    public Diary updateDiary(Long id, String email, DiaryWriteDto dto) {
+        Diary diary = diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
         
-        // 본인 확인
         if (!diary.getUser().getEmail().equals(email)) {
-            throw new RuntimeException("본인의 일기만 수정할 수 있습니다.");
+            throw new IllegalArgumentException("권한이 없습니다.");
         }
 
-        // 내용 갈아끼우기 (Diary Checking: 저장(save) 안 해도 DB가 바뀜)
-        diary.setContent(dto.getContent());
-        diary.setWrittenDate(dto.getDate());
-        diary.setSentiment(dto.getSentiment());
-    }
-    // 일기 삭제
-    @Transactional
-    public void deleteDiary(Long diaryId, String email){
-        // 일기 찾기
-        Diary diary = diaryRepository.findById(diaryId)
-                .orElseThrow(() -> new RuntimeException("일기가 존재하지 않습니다."));
+        // 내용 수정 시 벡터 재요청
+        List<Double> newVectorData = getEmbeddingFromAi(dto.getContent());
         
-        // 작성자 확인
-        if (!diary.getUser().getEmail().equals(email)){
-            throw new RuntimeException("작성자만 삭제할 수 있습니다.");
+        // [반영] 내용, 날짜, 감정, 벡터 모두 업데이트
+        diary.update(dto.getContent(), dto.getDate(), dto.getSentiment(), newVectorData);
+        
+        return diary;
+    }
+
+    // 4. 일기 삭제
+    public void deleteDiary(Long id, String email) {
+        Diary diary = diaryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("일기를 찾을 수 없습니다."));
+
+        if (!diary.getUser().getEmail().equals(email)) {
+            throw new IllegalArgumentException("권한이 없습니다.");
         }
 
-        diaryRepository.delete(diary);  // DB에서 삭제
+        diaryRepository.delete(diary);
+    }
+
+    private User getUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
+
+    private List<Double> getEmbeddingFromAi(String text) {
+        try {
+            log.info("AI 임베딩 요청: {}", text.length() > 10 ? text.substring(0, 10) + "..." : text);
+            Map response = webClient.post()
+                    .uri("/embed")
+                    .bodyValue(Map.of("text", text))
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .block();
+            
+            if (response != null && response.containsKey("embedding")) {
+                return (List<Double>) response.get("embedding");
+            }
+        } catch (Exception e) {
+            log.error("❌ AI 서버 통신 실패", e);
+        }
+        return null;
     }
 }

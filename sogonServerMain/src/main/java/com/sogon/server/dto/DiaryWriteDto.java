@@ -3,6 +3,7 @@ package com.sogon.server.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import lombok.NoArgsConstructor; // 기본 생성자 추가 (JSON 파싱용)
 
 import java.time.LocalDate;
 
