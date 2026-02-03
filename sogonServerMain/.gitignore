@@ -1,11 +1,41 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+# ======================================================
+# 1. 보안 및 환경 변수 (가장 중요)
+# ======================================================
+.env
+*.env
+sogonAI/.env
+# (예제 파일은 공유하고 싶다면 주석 해제)
+# !.env.example
 
-### STS ###
+# ======================================================
+# 2. 데이터베이스 (업로드 금지)
+# ======================================================
+postgresData/
+postgres_data/
+*.log
+
+# ======================================================
+# 3. 운영체제 시스템 파일
+# ======================================================
+.DS_Store
+Thumbs.db
+
+# ======================================================
+# 4. IDE 설정 (공유 금지)
+# ======================================================
+# VS Code
+.vscode/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# Eclipse / STS
 .apt_generated
 .classpath
 .factorypath
@@ -17,23 +47,25 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
+# NetBeans
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
 
-### VS Code ###
-.vscode/
-.env
-sogonAI/.env
+# ======================================================
+# 5. Java / Gradle 빌드 결과물
+# ======================================================
+.gradle/
+build/
+# Wrapper는 보통 포함하지만, 원하시면 제외 가능 (아래 !는 포함하겠다는 뜻)
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ======================================================
+# 6. Python (sogonAI)
+# ======================================================
+__pycache__/
+*.pyc
