@@ -4,10 +4,14 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
+from pathlib import Path
+
+
 
 # 1. 환경 설정 및 API 키 로드
 #. .env 파일에서 환경 변수 불러오기
-load_dotenv()
+load_dotenv(Path(__file__).parent.parent / '.env')  # 상위 폴더 .env 읽기
+
 
 # API 키 로드 확인
 api_key = os.getenv("GOOGLE_API_KEY")

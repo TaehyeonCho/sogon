@@ -3,9 +3,15 @@ spring:
     name: sogonServer
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/sogon_db  
-    username: postgres
-    password: pass1234
+    # 환경변수 ${POSTGRES_DB}를 읽고, 없으면 'sogon_db'를 사용
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
+    
+    # 환경변수 ${POSTGRES_USER}를 읽고, 없으면 'sogon_dev'를 사용
+    username: ${POSTGRES_USER}
+    
+    # 환경변수 ${POSTGRES_PASSWORD}를 읽고, 없으면 'sogon_pass'를 사용
+    password: ${POSTGRES_PASSWORD}
+    
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -17,7 +23,6 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# 로그인 토큰 설정
 jwt:
-  secret: VlwEyVlpkZpEQZnkkL8rVlwEyVlpkZpEQZnkkL8rVlwEyVlpkZpEQZnkkL8r
-  expiration: 3600000 # 1 hour in milliseconds
+  secret: ${JWT_SECRET} 
+  expiration: ${JWT_EXPIRATION}

@@ -53,3 +53,31 @@ tasks.named('test') {
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-parameters"
 }
+
+bootRun {
+    // 1. .env 파일 위치 찾기
+    def envFile = file('../.env')
+    
+    doFirst {
+        // 실행 직전에 로그 찍기
+        if (envFile.exists()) {
+            println "✅ [성공] .env 파일을 찾았습니다: ${envFile.absolutePath}"
+            println "   (환경변수 로딩 중...)"
+        } else {
+            println "❌ [실패] .env 파일이 없습니다! 경로를 확인하세요: ${envFile.absolutePath}"
+        }
+    }
+
+    // 2. 파일 읽어서 시스템 변수로 등록 (설정 단계에서 실행됨)
+    if (envFile.exists()) {
+        envFile.eachLine { line ->
+            line = line.trim()
+            if (line && !line.startsWith("#") && line.contains("=")) {
+                def key = line.substring(0, line.indexOf('=')).trim()
+                def value = line.substring(line.indexOf('=') + 1).trim()
+                systemProperty key, value
+                // println "   -> 로딩됨: $key" // (보안상 키 이름만 확인하고 싶으면 주석 해제)
+            }
+        }
+    }
+}
